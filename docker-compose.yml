@@ -13,7 +13,7 @@ services:
       - "./data:/var/lib/mysql"
 
   petclinic:
-    image: petclinic
+    image: rajent/petclinic:latest
     ports:
       - 8080:8080
     user: "1000"

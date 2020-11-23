@@ -18,3 +18,4 @@ build
 conf.d
 data
 logs
+testApp

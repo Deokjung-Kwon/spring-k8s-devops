@@ -1,0 +1,17 @@
+#https://kubernetes.io/ko/docs/concepts/services-networking/ingress/
+
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: test-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: petclinic.com
+    http:
+      paths:    
+      - path: /
+        backend:           # 연결될 서비스이름과 port
+          serviceName: petclinic-service
+          servicePort: 8080
