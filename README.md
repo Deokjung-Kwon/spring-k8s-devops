@@ -282,8 +282,7 @@ host설정을 의해서 hosts파일을 수정했습니다.
 NAME                       TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
 ingress-nginx-controller   NodePort   10.111.62.240   <none>        80:31338/TCP,443:30498/TCP   129m
 ```
-![home](./images/home.jpg)
-
+![App screenshot](./images/home.JPG)
 
 ### namespace는 default를 사용한다.
 yaml작성 시 namespace를 명기하지 않음으로 default로 사용하였습니다.
