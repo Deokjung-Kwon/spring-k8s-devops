@@ -27,44 +27,29 @@ DevOps 포지션 사전과제로 진행합니다.
 ### Build project
 ```
 > cd spring-k8s-devops
-> python ./manage.py build
+> python ./manage.py -b
 ```
 
 ### Deplay
 모든 서비스 배포
 ```
-> python ./manage.py deplay_all
+> python ./manage.py -d all
 ```
 
 app만 배포
 ```
-> python ./manage.py deplay_app
+> python ./manage.py -d app
 ```
 
-App container 순차적 재실행
+### Scale In/Out <숫자만큼 pods 개수 조정>
 ```
-> python ./manage.py restart_app
-```
-
-### Scale In/Out
-```
-> python ./manage.py scale_in
-> python ./manage.py scale_out
+> python ./manage.py scale 1
+> python ./manage.py scale 3
 ``` 
 
-### Database Restart
+### delete all resource
 ```
-> python ./manage.py db_restart
-```
-  
-### Database Restore
-```
-> python ./manage.py db_restore
-```
-  
-### 종료
-```
-> ./manage.py destroy
+> ./manage.py -r
 ```  
 
 ***
@@ -148,9 +133,17 @@ services:
       - mysql
 ```
 
-이제 docker-compose로 contianer들을 실행해봅니다.
+gradle에 task docker-compose 실행 task를 생성 후 실행해봅니다.
 ```
-> docker-compose create 
+task dockerRun() {
+    doLast {
+        println('Docker composer up')
+        exec{ commandLine "docker-compose up --build -d".split(' ') }
+    }
+}
+```
+```
+> gradle dockerRun
 ```
 web browser로 http://localhost:8080에 정상 접속됨을 확인했습니다.
 
@@ -161,7 +154,13 @@ web browser로 http://localhost:8080에 정상 접속됨을 확인했습니다.
 logging.file.path=/logs
 ```
 그리고 volumn에 host_path를 추가해서 host_path = /c/logs에 저장되도록 하였습니다.
-linux환경에서는 /logs로 deploy_app.yaml manifast를 수정하면 됩니다.
+```
+volumes:
+  - name: logs
+    hostPath:
+      path: /c/logs
+```
+linux환경에서는 host_path를 /logs로 수정하면 됩니다.
 
 ### 정상 동작 여부를 반환하는 api를 구현하며, 10초에 한번 체크하도록 한다. 3번 연속 체크에 실패하면 어플리케이션은 restart 된다.
 Http probe방식으로 체크하기 위해서 Spring Boot에 Rest API를 추가했습니다.
@@ -206,11 +205,10 @@ minReadySecond 옵션으로 Ready에서 바로 avaliable이 되어 순단현상�
 minReadySeconds: 10
   strategy:
     rollingUpdate:
-      maxSurge: 25% # ?
-      maxUnavailable: 25% # ?
+      maxSurge: 25%
+      maxUnavailable: 25%
     type: RollingUpdate
 ```
-
 
 ### 어플리케이션 프로세스는 root 계정이 아닌 uid:1000으로 실행한다.
 Deployment yaml에서 spec.template.spec.securityContext 아래에 runAsUser 설정했습니다.
@@ -243,12 +241,12 @@ volumeClaimTemplates:
 ``` 
 
 ### 어플리케이션과 DB는 Cluster domain을 이용하여 통신한다.
-mysql-service라는 이름으로 ClusterIP type Service를 생성합니다.
+mysql라는 이름으로 ClusterIP type Service를 생성합니다.
 ```
 apiVersion: v1
 kind: Service
 metadata:
-  name: mysql-service
+  name: mysql
   labels:
     app: mysql
 spec:
@@ -261,9 +259,10 @@ spec:
     app: mysql
 ```
 
-\src\main\resource\application.properties 파일에서 database url를 Cluster Domain으로 수정하고 다시 빌드합니다.
+※ 만약 mysql pod를 여러개 생성한다면 service를 headless모드로 수정 후 src/main/resource/application.preperties 파일을 열어 mysql주소를 master pod으로 수정해야 합니다.
 ```
-spring.datasource.url=jdbc:mysql://mysql-service.default.svc.cluster.local/petclinic
+# <stateful name>-0.<service-name>.<namespace>.svc.cluster.local/<table>
+spring.datasource.url=jdbc:mysql://mysql-stateful-0.mysql.default.svc.cluster.local/petclinic
 ```
 
 ### nginx-ingress-controller를 통해 어플리케이션에 접속이 가능하다.
@@ -277,12 +276,14 @@ host설정을 의해서 hosts파일을 수정했습니다.
 127.0.0.1 petclininic.com
 ```
 
-접속은 Ingress NodePort Service의 port번호를 확인해서 web broser로 접속합니다.
+접속은 Ingress NodePort Service의 port번호를 확인해서 web browser로 접속합니다.
 ```
 >  kubectl -n ingress-nginx get svc ingress-nginx-controller
 NAME                       TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
 ingress-nginx-controller   NodePort   10.111.62.240   <none>        80:31338/TCP,443:30498/TCP   129m
 ```
+![home](./images/home.jpg)
+
 
 ### namespace는 default를 사용한다.
 yaml작성 시 namespace를 명기하지 않음으로 default로 사용하였습니다.

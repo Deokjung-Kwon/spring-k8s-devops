@@ -19,6 +19,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: petclinic-deploy
+  labels:
+    app: petclinic
 spec:
   selector:
     matchLabels:
@@ -55,13 +57,6 @@ spec:
         volumeMounts:
           - name: logs
             mountPath: /logs
-      dnsPolicy: ClusterFirst
-      dnsConfig:
-        nameservers:
-          - 8.8.8.8
-        searches:
-          - mysql.default.svc.cluster.local
-
       volumes:
       - name: logs
         hostPath:

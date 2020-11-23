@@ -42,15 +42,13 @@ def build():
         os.system('gradlew dockerPush')
 
 def deploy(arg):
-
     if arg == "all":
         print("Deploy all resource")
         os.system('kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/baremetal/deploy.yaml')
-        os.system('kubectl apply -f ./script/')
-
+        os.system('kubectl apply -f ./k8s_manifest/')
     elif arg == "app":
         print("Deploy Application")
-        os.system('kubectl apply -f ./script/deply_app.yaml')
+        os.system('kubectl apply -f ./k8s_manifest/deply_app.yaml')
     else:
         print("invalid sub argument!")
 
@@ -74,13 +72,17 @@ def remove():
     print("remove all resource")
     os.system('kubectl delete svc petclinic-service')
     os.system('kubectl delete deploy petclinic-deploy')
+    os.system('kubectl delete svc mysql')
+    os.system('kubectl delete statefulsets mysql-stateful')
+    os.system('kubectl delete statefulsets mysql-stateful')
+    os.system('kubectl delete ingress test-ingress')
 
 def main(argv):
     FILE_NAME = argv[0]
     print()
     print('Working path: ', os.getcwd())
     try:
-        opts, etc_args = getopt.getopt(argv[1:], "hvbdgs:r", options)
+        opts, etc_args = getopt.getopt(argv[1:], "hvbd:gs:r", options)
     except getopt.GetoptError: # invalid option
         print("invalid argument! Please check option.\n", FILE_NAME, " -help or -h" )
         sys.exit(2)
@@ -98,7 +100,7 @@ def main(argv):
             build()
             sys.exit()
         elif opt in ("-d", "--deploy"):
-            deploy()
+            deploy(arg)
             sys.exit()
         elif opt in ("-g", "--get"):
             getall()
